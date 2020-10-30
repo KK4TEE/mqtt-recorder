@@ -88,12 +88,12 @@ async def shutdown(sig, loop):
 
 def main():
     """ Main function"""
-    parser = argparse.ArgumentParser(description='MQTT recorder')
+    parser = argparse.ArgumentParser(description='MQTT recorder for all topics of a broker')
 
     parser.add_argument('--server',
                         dest='server',
-                        metavar='server',
-                        help='MQTT broker',
+                        metavar='URL',
+                        help='MQTT broker e.g. mqtt://127.0.0.1/',
                         default='mqtt://127.0.0.1/')
     parser.add_argument('--mode',
                         dest='mode',

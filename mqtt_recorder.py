@@ -17,17 +17,20 @@ TOPICS = [("#", QOS_1)]
 logger = logging.getLogger('mqtt_recorder')
 
 
-async def mqtt_record(server: str, output: str = None) -> None:
+async def mqtt_record(server: str, output: str = None, append: bool = False) -> None:
     """Record MQTT messages"""
     mqtt = MQTTClient()
     await mqtt.connect(server)
     await mqtt.subscribe(TOPICS)
-    if output is not None:
+    if (output is not None and append is False):
         output_file = open(output, 'wt')
-    else:
-        output_file = sys.stdout
+        output_file.close()
     while True:
         message = await mqtt.deliver_message()
+        if output is not None:
+            output_file = open(output, 'a+')
+        else:
+            output_file = sys.stdout
         record = {
             'time': time.time(),
             'qos': message.qos,
@@ -36,6 +39,9 @@ async def mqtt_record(server: str, output: str = None) -> None:
             'msg_b64': base64.urlsafe_b64encode(message.data).decode()
         }
         print(json.dumps(record), file=output_file)
+        if output is not None:
+            output_file.close()
+            logger.debug(json.dumps(record))
 
 
 async def mqtt_replay(server: str, input: str = None, delay: int = 0, realtime: bool = False, scale: float = 1) -> None:
@@ -103,6 +109,10 @@ def main():
                         dest='output',
                         metavar='filename',
                         help='Output file')
+    parser.add_argument('--append',
+                        dest='append',
+                        action='store_true',
+                        help='Append output file')
     parser.add_argument('--realtime',
                         dest='realtime',
                         action='store_true',
@@ -136,7 +146,7 @@ def main():
                               delay=args.delay, realtime=args.realtime,
                               scale=1 / args.speed)
     else:
-        process = mqtt_record(server=args.server, output=args.output)
+        process = mqtt_record(server=args.server, output=args.output, append=args.append)
 
     loop = asyncio.get_event_loop()
     for s in (signal.SIGINT, signal.SIGTERM):

@@ -44,7 +44,7 @@ async def mqtt_record(server: str, output: str = None, append: bool = False) -> 
             logger.debug(json.dumps(record))
 
 
-async def mqtt_replay(server: str, input: str = None, delay: int = 0, realtime: bool = False, scale: float = 1) -> None:
+async def mqtt_replay(server: str, input: str = None, delay: int = 0, realtime: bool = False, scale: float = 1, repeat: bool = False) -> None:
     """Replay MQTT messages"""
     mqtt = MQTTClient()
     await mqtt.connect(server)
@@ -58,6 +58,17 @@ async def mqtt_replay(server: str, input: str = None, delay: int = 0, realtime: 
     else:
         static_delay_s = 0
     last_timestamp = None
+
+    if repeat:
+        while True:
+            await process_input_file(input_file, last_timestamp, mqtt, realtime, scale, static_delay_s)
+            if input is not None:
+                input_file = open(input, 'rt')
+    else:
+        await process_input_file(input_file, last_timestamp, mqtt, realtime, scale, static_delay_s)
+
+
+async def process_input_file(input_file, last_timestamp, mqtt, realtime, scale, static_delay_s):
     for line in input_file:
         record = json.loads(line)
         logger.info("%s", record)
@@ -79,6 +90,10 @@ async def mqtt_replay(server: str, input: str = None, delay: int = 0, realtime: 
         if delay_s > 0:
             logger.debug("Sleeping %.3f seconds", delay_s)
             await asyncio.sleep(delay_s)
+
+    if input is not None:
+        logger.info("End of playback file")
+        input_file.close()
 
 
 async def shutdown(sig, loop):
@@ -129,6 +144,11 @@ def main():
                         default=0,
                         metavar='milliseconds',
                         help='Delay between replayed events')
+    parser.add_argument('--repeat',
+                        dest='repeat',
+                        action='store_true',
+                        help="Restart playback after end of file")
+
     parser.add_argument('--debug',
                         dest='debug',
                         action='store_true',
@@ -144,7 +164,7 @@ def main():
     if args.mode == 'replay':
         process = mqtt_replay(server=args.server, input=args.input,
                               delay=args.delay, realtime=args.realtime,
-                              scale=1 / args.speed)
+                              scale=1 / args.speed, repeat=args.repeat)
     else:
         process = mqtt_record(server=args.server, output=args.output, append=args.append)
 

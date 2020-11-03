@@ -28,6 +28,7 @@ optional arguments:
   --realtime            Enable realtime replay
   --speed factor        Realtime speed factor for replay (10=10x)
   --delay milliseconds  Delay between replayed events
+  --repeat              Restart playback after end of file
   --debug               Enable debugging
 ```
 

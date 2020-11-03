@@ -14,7 +14,7 @@ pip3 install hbmqtt
 usage: mqtt_recorder.py [-h] [--server URL] [--mode mode]
                         [--input filename] [--output filename] [--append]
                         [--realtime] [--speed factor]
-                        [--delay milliseconds] [--debug]
+                        [--delay milliseconds] [--repeat] [--debug]
 
 MQTT recorder for all topics of a broker
 
